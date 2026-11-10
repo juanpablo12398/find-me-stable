@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Nuevo Avistamiento - Find Me</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 30px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header { background: #1a56db; padding: 24px 32px; text-align: center; }
+        .header h1 { color: #ffffff; margin: 0; font-size: 24px; letter-spacing: 1px; }
+        .header p { color: #bfdbfe; margin: 4px 0 0; font-size: 14px; }
+        .body { padding: 32px; }
+        .body h2 { color: #1e3a5f; font-size: 18px; margin-top: 0; }
+        .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .info-table td { padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 14px; color: #374151; }
+        .info-table td:first-child { font-weight: bold; color: #1a56db; width: 40%; }
+        .foto-section { text-align: center; margin: 20px 0; }
+        .foto-section img { max-width: 200px; border-radius: 8px; border: 2px solid #1a56db; }
+        .btn { display: inline-block; margin: 24px 0 8px; padding: 12px 28px; background: #1a56db; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 15px; font-weight: bold; }
+        .footer { background: #f9fafb; padding: 16px 32px; text-align: center; font-size: 12px; color: #9ca3af; border-top: 1px solid #e5e7eb; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Encabezado -->
+    <div class="header">
+        <h1>Find Me</h1>
+        <p>Sistema de búsqueda de personas desaparecidas</p>
+    </div>
+
+    <!-- Cuerpo -->
+    <div class="body">
+        <h2>Se registró un nuevo avistamiento</h2>
+        <p style="color:#374151; font-size:14px;">
+            Se reportó un avistamiento de
+            <strong th:text="${desaparecido.nombre + ' ' + desaparecido.apellido}">Nombre Apellido</strong>.
+            A continuación encontrará los detalles:
+        </p>
+
+        <table class="info-table">
+            <tr>
+                <td>Persona buscada</td>
+                <td th:text="${desaparecido.nombre + ' ' + desaparecido.apellido}">Nombre Apellido</td>
+            </tr>
+            <tr>
+                <td>Fecha y hora</td>
+                <td th:text="${#temporals.format(avistamiento.fechaHora, 'dd/MM/yyyy HH:mm')}">01/01/2026 10:00</td>
+            </tr>
+            <tr>
+                <td>Ubicación del avistamiento</td>
+                <td th:text="${avistamiento.latitud + ', ' + avistamiento.longitud}">-34.60, -58.38</td>
+            </tr>
+            <tr th:if="${desaparecido.ultimaUbicacion != null and !desaparecido.ultimaUbicacion.isEmpty()}">
+                <td>Última ubicación conocida</td>
+                <td th:text="${desaparecido.ultimaUbicacion}">Buenos Aires</td>
+            </tr>
+            <tr th:if="${avistamiento.descripcion != null and !avistamiento.descripcion.isEmpty()}">
+                <td>Descripción</td>
+                <td th:text="${avistamiento.descripcion}">Descripción del avistamiento</td>
+            </tr>
+        </table>
+
+        <!-- Foto si existe -->
+        <div th:if="${avistamiento.fotoFileId != null}" class="foto-section">
+            <p style="font-size:13px; color:#6b7280;">Foto adjunta al avistamiento:</p>
+            <a th:href="@{'/api/files/' + ${avistamiento.fotoFileId}}">
+                <img th:src="@{'/api/files/' + ${avistamiento.fotoFileId}}" alt="Foto del avistamiento"/>
+            </a>
+        </div>
+
+        <!-- Enlace al avistamiento -->
+        <div style="text-align:center;">
+            <a th:href="@{'/avistamientos/' + ${avistamiento.id}}" class="btn">
+                Ver avistamiento en el sistema
+            </a>
+        </div>
+
+        <p style="font-size:12px; color:#9ca3af; margin-top: 24px;">
+            Este mensaje fue enviado automáticamente porque usted está registrado como contacto
+            familiar de la persona buscada. Si tiene información adicional, por favor comuníquese
+            con las autoridades correspondientes.
+        </p>
+    </div>
+
+    <!-- Pie de página -->
+    <div class="footer">
+        <p>Find Me &mdash; Sistema de búsqueda de personas desaparecidas</p>
+        <p>Este es un mensaje automático, no responda a este email.</p>
+    </div>
+
+</div>
+</body>
+</html>

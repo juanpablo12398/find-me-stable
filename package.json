@@ -1,0 +1,17 @@
+{
+    "name":  "findme-root",
+    "private":  true,
+    "scripts":  {
+                    "test:java":  "mvnw test",
+                    "test:java:cov":  "mvnw clean test jacoco:report",
+                    "test:js":  "npm run test --prefix frontend",
+                    "test:js:cov":  "npm run test:js:cov --prefix frontend",
+                    "test:e2e":  "npm run test:e2e --prefix frontend",
+                    "test:e2e:report":  "npm run test:e2e:report --prefix frontend",
+                    "test:all":  "npm-run-all --parallel test:java test:js",
+                    "test:all:cov":  "npm-run-all --parallel test:java:cov test:js:cov"
+                },
+    "devDependencies":  {
+                            "npm-run-all":  "^4.1.5"
+                        }
+}

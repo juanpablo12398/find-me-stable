@@ -1,0 +1,57 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgis/postgis:15-3.3
+    container_name: findme-db
+    environment:
+      POSTGRES_DB: findme
+      POSTGRES_USER: findme_user
+      POSTGRES_PASSWORD: findme_dev_2025
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U findme_user -d findme"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: findme-backend
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/findme
+      DB_USER: findme_user
+      DB_PASS: findme_dev_2025
+      JWT_SECRET: dev_secret_at_least_32_chars_long_findme
+      JWT_COOKIE_SECURE: "false"
+      CORS_ORIGINS: http://localhost:5173,http://localhost:8081
+      SECURITY_COOKIE_SECURE: "false"
+      FINDME_STORAGE_ROOT: /app/storage
+      ENCRYPTION_KEY: dGhpcyBpcyBhIDMyIGJ5dGUga2V5ISEh
+      HMAC_KEY: dGhpcyBpcyBhbm90aGVyIDMyYnl0ZWtleQ==
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - storage_data:/app/storage
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: findme-frontend
+    ports:
+      - "8081:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  storage_data:

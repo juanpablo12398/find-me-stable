@@ -1,0 +1,200 @@
+name: CI - Find Me
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  encoding-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate UTF-8 (no BOM)
+        run: |
+          chmod +x scripts/check-encoding.sh
+          ./scripts/check-encoding.sh
+
+  backend-tests:
+    runs-on: ubuntu-latest
+    needs: [encoding-check]
+    services:
+      postgres:
+        image: postgis/postgis:15-3.3
+        env:
+          POSTGRES_DB: findme_test
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test_user -d findme_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: Run backend tests + coverage gates
+        run: chmod +x ./mvnw && ./mvnw clean verify jacoco:report
+        env:
+          DB_URL: jdbc:postgresql://localhost:5432/findme_test
+          DB_USER: test_user
+          DB_PASS: test_pass
+          JWT_SECRET: ci_test_secret_at_least_32_characters
+          ENCRYPTION_KEY: MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=
+          HMAC_KEY: MjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM=
+
+      - name: Upload backend coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
+
+  frontend-tests:
+    runs-on: ubuntu-latest
+    needs: [encoding-check]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --prefix frontend
+
+      - name: Run frontend tests
+        run: npm run test --prefix frontend
+
+      - name: Run frontend coverage
+        run: npm run test:js:cov --prefix frontend
+
+      - name: Validate frontend coverage gates
+        run: npm run test:js:cov:check --prefix frontend
+
+      - name: Upload frontend coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests]
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgis/postgis:15-3.3
+        env:
+          POSTGRES_DB: findme_test
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test_user -d findme_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DB_URL: jdbc:postgresql://localhost:5432/findme_test
+      DB_USER: test_user
+      DB_PASS: test_pass
+      JWT_SECRET: ci_test_secret_at_least_32_characters
+      JWT_EXPIRATION_DAYS: 7
+      CORS_ORIGINS: http://localhost:5173
+      PORT: 8080
+      ENCRYPTION_KEY: MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=
+      HMAC_KEY: MjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM=
+      BACKEND_URL: http://localhost:8080
+      E2E_BASE_URL: http://localhost:5173
+      E2E_USER_DNI: "44215507"
+      E2E_USER_EMAIL: e2e.user@findme.test
+      E2E_USER_NOMBRE: Juan
+      E2E_USER_APELLIDO: Perez
+      E2E_MISSING_DNI: "35123456"
+      E2E_MISSING_NOMBRE: Carlos
+      E2E_MISSING_APELLIDO: Vazquez
+      E2E_PAGINATION_COUNT: 15
+      E2E_PAGINATION_DNI_START: 36000001
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci --prefix frontend
+
+      - name: Ensure postgres client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Seed RENAPER schema/data
+        run: PGPASSWORD=test_pass psql -h localhost -U test_user -d findme_test -f scripts/e2e/seed-renaper.sql
+
+      - name: Start backend
+        run: |
+          chmod +x ./mvnw
+          nohup ./mvnw -DskipTests spring-boot:run > backend.log 2>&1 &
+          echo $! > backend.pid
+
+      - name: Wait for backend health
+        run: |
+          for i in {1..90}; do
+            if curl -fsS http://localhost:8080/actuator/health > /dev/null; then
+              echo "Backend listo"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend no inicio a tiempo"
+          cat backend.log
+          exit 1
+
+      - name: Seed app data for E2E
+        run: node scripts/e2e/seed-e2e-data.mjs
+
+      - name: Install Playwright browser
+        run: npm exec --prefix frontend playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: npm run test:e2e --prefix frontend
+
+      - name: Upload E2E artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-artifacts
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
+            backend.log
+
+      - name: Stop backend
+        if: always()
+        run: |
+          if [ -f backend.pid ]; then kill $(cat backend.pid) || true; fi

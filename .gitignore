@@ -1,0 +1,48 @@
+# IDE
+.idea/
+*.iml
+
+# Java / Maven
+.m2/
+target/
+*.log
+
+# Node
+node_modules/
+frontend/node_modules/
+
+# Builds
+dist/
+build/
+frontend/dist/
+frontend/build/
+
+# Vite cache
+.vite/
+frontend/.vite/
+
+# Next
+.next/
+frontend/.next/
+
+# Playwright
+test-results/
+playwright-report/
+frontend/test-results/
+frontend/playwright-report/
+
+# Env
+.env
+.env.*
+
+# Storage
+storage/
+frontend/storage/
+
+# Coverage
+coverage/
+frontend/coverage/
+
+# JetBrains default
+shelf/
+workspace.xml
