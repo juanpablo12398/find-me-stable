@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { MapContainer, TileLayer, Circle, Rectangle, Polygon, Polyline, Marker, Popup } from "react-leaflet";
-import MarkerClusterGroup from "react-leaflet-cluster";
+import MarkerClusterModule from "react-leaflet-cluster";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -33,6 +33,9 @@ import { useAuth } from "@/hooks/useAuth.jsx";
 import { AvistamientoService } from "@/services/AvistamientoService";
 import { DesaparecidoService } from "@/services/DesaparecidoService";
 import { webSocketService } from "@/services/WebSocketService";
+
+// The package publishes CommonJS; Vite 8 exposes its default export as an object.
+const MarkerClusterGroup = MarkerClusterModule.default ?? MarkerClusterModule;
 
 export default function MapaAvistamientos() {
   const { user, isAuthenticated } = useAuth();

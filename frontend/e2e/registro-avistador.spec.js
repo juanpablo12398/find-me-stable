@@ -20,7 +20,7 @@ test('Registro de avistador redirige al mapa y muestra badge de usuario', async 
   await page.locator('input[name="email"]').fill(REGISTER_EMAIL);
   await page.locator('input[name="telefono"]').fill(REGISTER_PHONE);
 
-  await page.getByRole('button', { name: /registrarme/i }).click();
+  await page.locator('main').getByRole('button', { name: 'Registrarme', exact: true }).click();
 
   await expect(page).toHaveURL(/\/MapaAvistamientos/i);
   await expect(page.locator('header')).toContainText(new RegExp(`${REGISTER_NAME}|${REGISTER_DNI}`, 'i'));
