@@ -26,7 +26,7 @@ test('Reporte de avistamiento desde mapa (login + reportar + modal)', async ({ p
 
   await expect(page).not.toHaveURL(/iniciar|login/i);
 
-  const reportarBtn = page.getByRole('button', { name: /^reportar$/i }).first();
+  const reportarBtn = page.getByRole('button', { name: /activar modo reporte/i });
   await expect(reportarBtn).toBeVisible();
   await reportarBtn.click({ force: true });
 
