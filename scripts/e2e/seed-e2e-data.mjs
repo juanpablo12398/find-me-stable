@@ -25,7 +25,7 @@ const desaparecido = {
     process.env.E2E_MISSING_DESC ??
     'Persona vista por ultima vez cerca del centro con campera azul.',
   contactoFamiliar:
-    process.env.E2E_MISSING_CONTACTO ?? 'familia.e2e@findme.test',
+    process.env.E2E_MISSING_CONTACTO ?? '1100000001',
   ultimaUbicacion: process.env.E2E_MISSING_UBICACION ?? 'Cerca del obelisco',
   fechaDesaparicion:
     process.env.E2E_MISSING_FECHA ??
@@ -103,7 +103,7 @@ async function seedPaginationDataset(cookie) {
         edad: 30,
         dni,
         descripcion: `Caso semilla E2E para paginacion numero ${i + 1} con descripcion larga de prueba.`,
-        contactoFamiliar: `pagination+${i + 1}@findme.test`,
+        contactoFamiliar: String(1100000100 + i),
         ultimaUbicacion: `Zona Seed ${i + 1}, CABA`,
         fechaDesaparicion: new Date(Date.now() - (i + 2) * 3600 * 1000).toISOString(),
       })
